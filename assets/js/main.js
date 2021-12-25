@@ -53,14 +53,15 @@ class MusicalNoteDisplay{
         this.context = context;
         this.colorHSL = 1;
         this.alpha = 1.0;
+        this.rotate = 0.01;
     }
 
-    display(rotation){
+    display(){
         this.context.beginPath();
         this.context.strokeStyle = `hsla( ${this.colorHSL}, 100%, 50%, ${this.alpha} )`;
         c.lineCap = 'round';
         this.context.lineWidth = this.noteThickness;
-        this.context.arc(this.centerX, this.centerY, this.radius, this.noteStartRadian, this.noteEndRadian + rotation);
+        this.context.arc(this.centerX, this.centerY, this.radius, this.noteStartRadian += this.rotate, this.noteEndRadian += this.rotate);
         this.context.stroke();
         this.context.closePath();
     }
@@ -91,18 +92,18 @@ window.addEventListener('mouseup', (e_up) => {
     //pitch is one of 12 tones within the scale, this is arbitrary
     let pitch = 0;
     
-    if(maxDistance <= 10) pitch = 'a2';
-    if(maxDistance > 10 && maxDistance <= 20) pitch = 'b2';
-    if(maxDistance > 20 && maxDistance <= 30) pitch = 'c2';
-    if(maxDistance > 30 && maxDistance <= 40) pitch = 'd2';
-    if(maxDistance > 40 && maxDistance <= 50) pitch = 'e2';
-    if(maxDistance > 50 && maxDistance <= 60) pitch = 'f2';
-    if(maxDistance > 60 && maxDistance <= 70) pitch = 'g2';
-    if(maxDistance > 70) pitch = 'a3';
+    if(maxDistance <= 10) pitch = 40;
+    if(maxDistance > 10 && maxDistance <= 20) pitch = 50;
+    if(maxDistance > 20 && maxDistance <= 30) pitch = 60;
+    if(maxDistance > 30 && maxDistance <= 40) pitch = 70;
+    if(maxDistance > 40 && maxDistance <= 50) pitch = 80;
+    if(maxDistance > 50 && maxDistance <= 60) pitch = 90;
+    if(maxDistance > 60 && maxDistance <= 70) pitch = 100;
+    if(maxDistance > 70) pitch = 110;
     
     let duration = Math.abs(clickTime - (new Date().getTime()));
     
-    queNotes.push(new MusicalNote(pitch, clickTime, duration)); //todo pitch is placeholder
+    queNotes.push(new MusicalNote(pitch, clickTime, duration));
     displayNotes.push(new MusicalNoteDisplay(
         0, 
         (Math.PI / 180) * duration / 10, 
@@ -112,6 +113,23 @@ window.addEventListener('mouseup', (e_up) => {
         75, 
         c
         ));
+    
+    const aContext = new AudioContext();
+    var o = aContext.createOscillator();
+    var g = aContext.createGain();
+
+    o.type = 'sine';
+    o.frequency.setValueAtTime(pitch, aContext.currentTime);
+    g.gain.value = 0.3;
+
+    g.connect(aContext.destination);
+
+    o.start();
+    
+    setTimeout(()=>{
+        o.stop();
+    },500);
+
 });
 
 // turn the interface
@@ -122,9 +140,13 @@ function animate(){
     c.clearRect(0,0, window.innerWidth, window.innerHeight);
     new MusicStaff(c).drawStaff();
     displayNotes.forEach((element, index, wholeArray) => {
-        element.display(rotate);
+        element.display();
+        element.colorHSL+= 0.01;
+        element.alpha -= 0.001;
+        if(element.alpha < 0){
+            delete element;
+        }
     });
-    rotate++;
     requestAnimationFrame(animate);
 }
 animate();
