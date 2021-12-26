@@ -59,7 +59,7 @@ class MusicalNoteDisplay{
     display(){
         this.context.beginPath();
         this.context.strokeStyle = `hsla( ${this.colorHSL}, 100%, 50%, ${this.alpha} )`;
-        c.lineCap = 'round';
+        //c.lineCap = 'round';
         this.context.lineWidth = this.noteThickness;
         this.context.arc(this.centerX, this.centerY, this.radius, this.noteStartRadian += this.rotate, this.noteEndRadian += this.rotate);
         this.context.stroke();
@@ -84,30 +84,30 @@ window.addEventListener('mousedown', (e_down) => {
 // secondly, devide by the staff lines the larger distance click x or y from center x or y
 //wait for mouseup
 window.addEventListener('mouseup', (e_up) => {
-    const distanceFromCenterX = centerX - e_up.clientX;
-    const distanceFromCenterY = centerY - e_up.clientY;
-    
-    const maxDistance = Math.abs(Math.max(distanceFromCenterX,distanceFromCenterY));
-    
+    const distanceFromCenterX = Math.abs(e_up.clientX - centerX) + 175;
+    const distanceFromCenterY = Math.abs(e_up.clientY - centerY) + 175;
+
+    const maxDistance = Math.max(distanceFromCenterX, distanceFromCenterY);
+    console.log(maxDistance);
     //pitch is one of 12 tones within the scale, this is arbitrary
     let pitch = 0;
     
-    if(maxDistance <= 10) pitch = 40;
-    if(maxDistance > 10 && maxDistance <= 20) pitch = 50;
-    if(maxDistance > 20 && maxDistance <= 30) pitch = 60;
-    if(maxDistance > 30 && maxDistance <= 40) pitch = 70;
-    if(maxDistance > 40 && maxDistance <= 50) pitch = 80;
-    if(maxDistance > 50 && maxDistance <= 60) pitch = 90;
-    if(maxDistance > 60 && maxDistance <= 70) pitch = 100;
-    if(maxDistance > 70) pitch = 110;
+    if(maxDistance <= 100) pitch = 50;
+    if(maxDistance > 100 && maxDistance <= 200) pitch = 100;
+    if(maxDistance > 200 && maxDistance <= 250) pitch = 150;
+    if(maxDistance > 250 && maxDistance <= 300) pitch = 200;
+    if(maxDistance > 300 && maxDistance <= 350) pitch = 250;
+    if(maxDistance > 350 && maxDistance <= 400) pitch = 300;
+    if(maxDistance > 400 && maxDistance <= 500) pitch = 350;
+    if(maxDistance > 500) pitch = 400;
     
     let duration = Math.abs(clickTime - (new Date().getTime()));
     
-    queNotes.push(new MusicalNote(pitch, clickTime, duration));
+    //queNotes.push(new MusicalNote(pitch, clickTime, duration));
     displayNotes.push(new MusicalNoteDisplay(
         0, 
         (Math.PI / 180) * duration / 10, 
-        maxDistance, 
+        pitch, 
         centerX, 
         centerY, 
         75, 
@@ -122,13 +122,18 @@ window.addEventListener('mouseup', (e_up) => {
     o.frequency.setValueAtTime(pitch, aContext.currentTime);
     g.gain.value = 0.3;
 
+    o.connect(g);
     g.connect(aContext.destination);
 
     o.start();
+
+    setInterval(() => {
+        g.gain.value = g.gain.value - 0.01;
+    }, 100);
     
     setTimeout(()=>{
         o.stop();
-    },500);
+    }, g.gain.value * 10000);
 
 });
 
@@ -141,8 +146,8 @@ function animate(){
     new MusicStaff(c).drawStaff();
     displayNotes.forEach((element, index, wholeArray) => {
         element.display();
-        element.colorHSL+= 0.01;
-        element.alpha -= 0.001;
+        element.colorHSL+= 0.1;
+        element.alpha -= 0.01;
         if(element.alpha < 0){
             delete element;
         }
